@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-cd cart \
-  && composer install \
-  && composer run-script post-create-project-cmd \
-  && chmod -R 777 bootstrap/ storage/ vendor/
 
 for i in cart order catalog promo
 do 
