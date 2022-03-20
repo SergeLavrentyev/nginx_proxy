@@ -1,0 +1,99 @@
+upstream backend {
+    server proxy_php:9000;
+}
+
+server {
+
+    listen 80;
+
+    charset utf-8;
+
+    root /var/www;
+    index index.php;
+
+    error_log  /var/log/error-nginx.log;
+    access_log /var/log/access-nginx.log;
+
+    location ^~ /cart/ {
+        alias /var/www/cart/public/;
+        try_files $uri $uri/ @rewrite_cart;
+
+        location ~ \.php$ {
+            fastcgi_pass backend;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $request_filename;
+            include fastcgi_params;
+        }
+    }
+
+    location ^~ /catalog/ {
+        alias /var/www/catalog/public/;
+        try_files $uri $uri/ @rewrite_catalog;
+
+        location ~ \.php$ {
+            fastcgi_pass backend;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $request_filename;
+            include fastcgi_params;
+        }
+    }
+
+    location ^~ /promo/ {
+        alias /var/www/promo/public/;
+        try_files $uri $uri/ @rewrite_promo;
+
+        location ~ \.php$ {
+            fastcgi_pass backend;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $request_filename;
+            include fastcgi_params;
+        }
+    }
+
+    location ^~ /order/ {
+        alias /var/www/order/public/;
+        try_files $uri $uri/ @rewrite_order;
+
+        location ~ \.php$ {
+            fastcgi_pass backend;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $request_filename;
+            include fastcgi_params;
+        }
+    }
+ 
+    location @rewrite_cart{
+        rewrite /cart/(.*)$ /cart/index.php?/$1 last;
+    }
+
+    location @rewrite_catalog{
+        rewrite /catalog/(.*)$ /catalog/index.php?/$1 last;
+    }
+
+    location @rewrite_order{
+        rewrite /order/(.*)$ /order/index.php?/$1 last;
+    }
+
+    location @rewrite_promo{
+        rewrite /promo/(.*)$ /promo/index.php?/$1 last;
+    }
+
+    location ~* \.php$ {
+        fastcgi_pass backend;
+        fastcgi_index index.php;
+        fastcgi_read_timeout 360;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~* \.(gif|jpg|jpeg|png|js|css|ico|html)$ {
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    client_max_body_size 10G;
+    client_body_buffer_size 400M;
+    fastcgi_buffers 64 4K;
+}

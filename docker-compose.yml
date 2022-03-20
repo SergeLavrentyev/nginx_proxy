@@ -1,0 +1,71 @@
+version: "3.7"
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: ./docker/services/nginx/Dockerfile
+    container_name: ${DOCKER_PROJECT_NAME}_nginx
+    image: ${DOCKER_PROJECT_NAME}_nginx
+    working_dir: ${DOCKER_PROJECT_PATCH}
+    ports:
+      - 80:80
+    volumes:
+      - ${DOCKER_PROJECT_ROOT}:${DOCKER_PROJECT_PATCH}
+      - ./docker/services/nginx/conf.d/nginx.conf.template:/etc/nginx/conf.d/default.conf
+      - ./docker/scripts/nginx.sh:/scripts/nginx.sh
+    environment:
+      - PROJECT_PATCH=${DOCKER_PROJECT_PATCH}
+      - PHP_HOST=${DOCKER_PROJECT_NAME}_php
+      - PROJECT_FOLDER=${DOCKER_PROJECT_NAME}
+    command: /scripts/nginx.sh
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - net
+
+  php:
+    build:
+      context: .
+      dockerfile: ./docker/services/php/${DOCKER_PHP_VERSION}/Dockerfile
+    container_name: ${DOCKER_PROJECT_NAME}_php
+    image: ${DOCKER_PROJECT_NAME}_php
+    working_dir: ${DOCKER_PROJECT_PATCH}
+    ports:
+      - 9000:9000
+    volumes:
+      - ./cart:${DOCKER_PROJECT_PATCH}/cart
+      - ./catalog:${DOCKER_PROJECT_PATCH}/catalog
+      - ./order:${DOCKER_PROJECT_PATCH}/order
+      - ./promo:${DOCKER_PROJECT_PATCH}/promo
+      - ./docker/services/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/scripts/php.sh:/scripts/php.sh
+    command: /scripts/php.sh
+    environment:
+      - PROJECT_PATCH=${DOCKER_PROJECT_PATCH}
+      - MYSQL_HOST=${DOCKER_PROJECT_NAME}_mysql
+    depends_on:
+      - mysql
+    networks:
+      - net
+
+  mysql:
+    build:
+      context: .
+      dockerfile: ./docker/services/mysql/${DOCKER_MYSQL_VERSION}/Dockerfile
+    container_name: ${DOCKER_PROJECT_NAME}_mysql
+    image: ${DOCKER_PROJECT_NAME}_mysql
+    volumes:
+      - ./docker/services/mysql/conf/custom.cnf:/etc/mysql/custom.cnf
+    environment:
+      - MYSQL_DATABASE=${DOCKER_PROJECT_NAME}
+      - MYSQL_ROOT_PASSWORD=${DOCKER_MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${DOCKER_MYSQL_USER}
+      - MYSQL_PASSWORD=${DOCKER_MYSQL_PASSWORD}
+    networks:
+      - net
+  
+networks:
+  net:
+    driver: bridge
