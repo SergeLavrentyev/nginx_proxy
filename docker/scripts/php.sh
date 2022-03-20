@@ -5,6 +5,7 @@ do
   echo -e "$PROJECT_PATCH/$i";
   
   cd $PROJECT_PATCH/$i \
+    && cp .env.example .env \
     && composer install \
     && composer run-script post-create-project-cmd \
     && chmod -R 777 bootstrap/ storage/ vendor/ 
